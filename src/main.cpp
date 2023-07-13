@@ -14,13 +14,13 @@ enum DisasmMode {
 };
 
 void printUsage(const std::string& fileName) {
-    std::printf("Usage: %s [--options]\n", fileName.c_str());
+    std::printf("Usage: %s [--options] -f <input file>\n", fileName.c_str());
     std::printf("\n");
     std::printf("Available options:\n");
     std::printf("\t-h, --help: Display this help message.\n");
-    std::printf("\t-c, --compile: Enable compilation mode. Requires -o <filename>.\n");
-    std::printf("\t-f <filename>, --file <filename>: Provide a Luau bytecode/source file to be disassembled/compiled.\n");
-    std::printf("\t-o <filename>, --output <filename>: Output file for disassembly/compilation.\n");
+    std::printf("\t-c, --compile: Enable compilation mode. Requires -o <output file>.\n");
+    std::printf("\t-f <input file>, --file <input file>: Provide a Luau bytecode/source file to be disassembled/compiled.\n");
+    std::printf("\t-o <output file>, --output <output file>: Output file for disassembly/compilation (NOTE: required for compilation mode).\n");
 }
 
 static int assertionHandler(const char* expr, const char* file, int line, const char* function)
