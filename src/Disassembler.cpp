@@ -149,7 +149,7 @@ std::map<std::uint8_t, std::string> builtinFunctionMap = {
     {LBF_VECTOR, "vector"},
     {LBF_BIT32_COUNTLZ, "bit32.countlz"},
     {LBF_BIT32_COUNTRZ, "bit32.countrz"},
-    {LBF_SELECT_VARARG, "select.vararg"},
+    {LBF_SELECT_VARARG, "select"},
     {LBF_RAWLEN, "rawlen"},
     {LBF_BIT32_EXTRACTK, "bit32.extractk"},
     {LBF_GETMETATABLE, "getmetatable"},
