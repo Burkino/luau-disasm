@@ -1,6 +1,7 @@
 #include "Disassembler.hpp"
 
 #include <map>
+#include <string.h>
 
 #include <Luau/lualib.h>
 #include <Luau/lstate.h>
@@ -159,7 +160,7 @@ void Disassembler::write(const char* format, ...) {
     char buffer[1024];
     va_list args;
     va_start(args, format);
-    vsnprintf_s(buffer, sizeof(buffer) - 1, format, args);
+    vsnprintf(buffer, sizeof(buffer) - 1, format, args);
     va_end(args);
 
     this->stream << buffer;
@@ -189,7 +190,7 @@ void Disassembler::processProto(Proto* p, Proto* parent) {
         {
             char* str = svalue(k);
             if (sizeof(str) > 50) {
-                strncpy_s(str, 50, str, 50);
+                strncpy(str, str, 50);
             }
             this->write("%s\n", str);
             break;
@@ -299,23 +300,23 @@ void Disassembler::processProto(Proto* p, Proto* parent) {
             switch (count) {
             case 1:
             {
-                strcpy_s(buffer, sizeof(buffer), svalue(&p->k[id0]));
+                strcpy(buffer, svalue(&p->k[id0]));
                 break;
             }
             case 2:
             {
-                strcpy_s(buffer, sizeof(buffer), svalue(&p->k[id0]));
-                strcat_s(buffer, sizeof(buffer), ".");
-                strcat_s(buffer, sizeof(buffer), svalue(&p->k[id1]));
+                strcpy(buffer, svalue(&p->k[id0]));
+                strcat(buffer, ".");
+                strcat(buffer, svalue(&p->k[id1]));
                 break;
             }
             case 3:
             {
-                strcpy_s(buffer, sizeof(buffer), svalue(&p->k[id0]));
-                strcat_s(buffer, sizeof(buffer), ".");
-                strcat_s(buffer, sizeof(buffer), svalue(&p->k[id1]));
-                strcat_s(buffer, sizeof(buffer), ".");
-                strcat_s(buffer, sizeof(buffer), svalue(&p->k[id2]));
+                strcpy(buffer, svalue(&p->k[id0]));
+                strcat(buffer, ".");
+                strcat(buffer, svalue(&p->k[id1]));
+                strcat(buffer, ".");
+                strcat(buffer, svalue(&p->k[id2]));
                 break;
             }
             }
