@@ -1,0 +1,124 @@
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+
+#include "ArgParser.hpp"
+#include "Compiler.hpp"
+#include "Disassembler.hpp"
+
+namespace fs = std::filesystem;
+
+enum DisasmMode {
+    disassemble,
+    compile
+};
+
+void printUsage(const std::string& fileName) {
+    std::printf("Usage: %s [--options]\n", fileName.c_str());
+    std::printf("\n");
+    std::printf("Available options:\n");
+    std::printf("\t-h, --help: Display this help message.\n");
+    std::printf("\t-c, --compile: Enable compilation mode. Requires -o <filename>.\n");
+    std::printf("\t-f <filename>, --file <filename>: Provide a Luau bytecode/source file to be disassembled/compiled.\n");
+    std::printf("\t-o <filename>, --output <filename>: Output file for disassembly/compilation.\n");
+}
+
+static int assertionHandler(const char* expr, const char* file, int line, const char* function)
+{
+    printf("%s(%d): ASSERTION FAILED: %s\n", file, line, expr);
+    return 1;
+}
+
+int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        std::printf("Error: no input file specified.\n");
+        printUsage(argv[0]);
+        return 0;
+    }
+
+    ArgParser parser(argc, argv);
+    DisasmMode mode = DisasmMode::disassemble;
+    std::string fileName;
+    bool shouldOutput = false;
+    std::string outputFileName = "";
+    fs::path inputFilePath;
+    std::ifstream inputFileData;
+    std::stringstream inputFileStream;
+    std::ofstream outputFileStream;
+
+    if (parser.doesArgExist("-h") || parser.doesArgExist("--help")) {
+        printUsage(argv[0]);
+        return 0;
+    }
+    
+    if (!parser.doesArgExist("-f") && !parser.doesArgExist("--file")) {
+        std::printf("Error: no input file specified.\n");
+        printUsage(argv[0]);
+        return 0;
+    }
+
+    if (parser.doesArgExist("-c") || parser.doesArgExist("--compile")) {
+        if (!parser.doesArgExist("-o") && !parser.doesArgExist("--output")) {
+            std::printf("Error: please specify output file using `-o <filename>`\n");
+            return 0;
+        }
+        mode = DisasmMode::compile;
+    }
+
+    fileName = parser.getArgValue("-f");
+    if (fileName.empty()) {
+        fileName = parser.getArgValue("--file");
+    }
+
+    if (parser.doesArgExist("-o") || parser.doesArgExist("--output")) {
+        shouldOutput = true;
+        outputFileName = parser.getArgValue("-o");
+        if (outputFileName.empty()) {
+            outputFileName = parser.getArgValue("--output");
+        }
+    }
+
+    inputFilePath = fileName;
+
+    if (!fs::exists(inputFilePath)) {
+        std::printf("Error: input file %s not found.\n", fileName.c_str());
+        return 0;
+    }
+
+    Luau::assertHandler() = assertionHandler;
+
+    inputFileData = std::ifstream(inputFilePath, std::ios::in | std::ios::binary);
+    inputFileStream << inputFileData.rdbuf();
+
+    if (mode == DisasmMode::compile) {
+        Compiler compiler(inputFileStream.str());
+
+        if (!compiler.compile()) {
+            std::printf("Syntax error: %s\n", compiler.getBytecode().c_str() + 1);
+            return 0;
+        }
+
+        outputFileStream.open(outputFileName, std::ios::out | std::ios::binary);
+        outputFileStream << compiler.getBytecode();
+        outputFileStream.close();
+
+        std::printf("Bytecode written to %s!\n", outputFileName.c_str());
+    } else {
+        Disassembler disassembler(inputFileStream.str());
+
+        if (!disassembler.disassemble()) {
+            std::printf("Disassembler error: input bytecode is invalid.\n");
+            return 0;
+        }
+
+        if (shouldOutput) {
+            outputFileStream.open(outputFileName, std::ios::out | std::ios::binary);
+            outputFileStream << disassembler.getStreamData();
+            outputFileStream.close();
+        } else {
+            std::printf("%s\n", disassembler.getStreamData().c_str());
+        }
+    }
+
+    return 0;
+}
