@@ -3,6 +3,8 @@ this is my really fucking shit attempt at writing a luau disassembler.
 
 luau-disasm can both compile lua(u) scripts into luau bytecode, and disassemble luau bytecode from files.
 
+see [here](https://raw.githubusercontent.com/tealingg/luau-disasm/main/disassembled_example.txt) for the disassembly of a compiled version of Dex V2.
+
 ## disclaimers
 - uh yeah expect bugs and stuff
 
