@@ -20,6 +20,16 @@ Available options:
         -o <output file>, --output <output file>: Output file for disassembly/compilation (NOTE: required for compilation mode).
 ```
 
+example (compilation):
+```sh
+luau-disasm -c -f input.lua -o output.luau
+```
+
+example (disassembly):
+```sh
+luau-disasm -f output.luau
+```
+
 ## building from source
 - clone the repository and `cd` into it.
 - create and enter a build directory
