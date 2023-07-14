@@ -21,6 +21,7 @@ void printUsage(const std::string& fileName) {
     std::printf("\t-c, --compile: Enable compilation mode. Requires -o <output file>.\n");
     std::printf("\t-f <input file>, --file <input file>: Provide a Luau bytecode/source file to be disassembled/compiled.\n");
     std::printf("\t-o <output file>, --output <output file>: Output file for disassembly/compilation (NOTE: required for compilation mode).\n");
+    std::printf("\t-e <multiplier>, --encode <multiplier>: Multiplier for encoding/decoding instructions.\n");
 }
 
 static int assertionHandler(const char* expr, const char* file, int line, const char* function)
@@ -45,6 +46,7 @@ int main(int argc, char *argv[]) {
     std::ifstream inputFileData;
     std::stringstream inputFileStream;
     std::ofstream outputFileStream;
+    int encodeMult = 1;
 
     if (parser.doesArgExist("-h") || parser.doesArgExist("--help")) {
         printUsage(argv[0]);
@@ -78,6 +80,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    if (parser.doesArgExist("-e") || parser.doesArgExist("--encode")) {
+        std::string encodeMultStr = parser.getArgValue("-e");
+        if (encodeMultStr.empty()) {
+            encodeMultStr = parser.getArgValue("--encode");
+        }
+        encodeMult = std::stoi(encodeMultStr);
+    }
+
     inputFilePath = fileName;
 
     if (!fs::exists(inputFilePath)) {
@@ -104,7 +114,7 @@ int main(int argc, char *argv[]) {
 
         std::printf("Bytecode written to %s!\n", outputFileName.c_str());
     } else {
-        Disassembler disassembler(inputFileStream.str());
+        Disassembler disassembler(inputFileStream.str(), encodeMult, encodeMult != 1);
 
         if (!disassembler.disassemble()) {
             std::printf("Disassembler error: input bytecode is invalid.\n");

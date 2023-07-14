@@ -166,7 +166,166 @@ void Disassembler::write(const char* format, ...) {
     this->stream << buffer;
 }
 
+void Disassembler::decodeInstructions(Proto* p) {
+    if (this->shouldDecode) {
+        for (int i = 0; i < p->sizecode; i++) {
+            std::uint32_t instruction = p->code[i];
+            std::uint8_t opcode = LUAU_INSN_OP(instruction);
+
+            auto it = std::find(this->opcodeDecodeTable.begin(), this->opcodeDecodeTable.end(), opcode);
+
+            std::uint8_t newOpcode;
+
+            if (it != this->opcodeDecodeTable.end()) {
+                newOpcode = it - this->opcodeDecodeTable.begin();
+            }
+            else {
+                newOpcode = opcode;
+            }
+
+            std::uint32_t newInstruction;
+
+            // replace the instruction by each type
+            switch (newOpcode) {
+            // ABC
+            case LOP_LOADNIL:
+            case LOP_LOADB:
+            case LOP_MOVE:
+            case LOP_GETGLOBAL:
+            case LOP_SETGLOBAL:
+            case LOP_GETUPVAL:
+            case LOP_SETUPVAL:
+            case LOP_CLOSEUPVALS:
+            case LOP_GETTABLE:
+            case LOP_SETTABLE:
+            case LOP_GETTABLEKS:
+            case LOP_SETTABLEKS:
+            case LOP_GETTABLEN:
+            case LOP_SETTABLEN:
+            case LOP_NAMECALL:
+            case LOP_CALL:
+            case LOP_RETURN:
+            case LOP_ADD:
+            case LOP_SUB:
+            case LOP_MUL:
+            case LOP_DIV:
+            case LOP_MOD:
+            case LOP_POW:
+            case LOP_ADDK:
+            case LOP_SUBK:
+            case LOP_MULK:
+            case LOP_DIVK:
+            case LOP_MODK:
+            case LOP_POWK:
+            case LOP_AND:
+            case LOP_OR:
+            case LOP_ANDK:
+            case LOP_ORK:
+            case LOP_CONCAT:
+            case LOP_NOT:
+            case LOP_MINUS:
+            case LOP_LENGTH:
+            case LOP_NEWTABLE:
+            case LOP_SETLIST:
+            case LOP_GETVARARGS:
+            case LOP_PREPVARARGS:
+            case LOP_FASTCALL:
+            case LOP_CAPTURE:
+            case LOP_FASTCALL1:
+            case LOP_FASTCALL2:
+            case LOP_FASTCALL2K:
+            {
+                newInstruction = std::uint32_t(newOpcode) | (LUAU_INSN_A(instruction) << 8) | (LUAU_INSN_B(instruction) << 16) | (LUAU_INSN_C(instruction) << 24);
+                break;
+            }
+            // AD
+            case LOP_LOADN:
+            case LOP_LOADK:
+            case LOP_GETIMPORT:
+            case LOP_NEWCLOSURE:
+            case LOP_JUMP:
+            case LOP_JUMPBACK:
+            case LOP_JUMPIF:
+            case LOP_JUMPIFNOT:
+            case LOP_JUMPIFEQ:
+            case LOP_JUMPIFLE:
+            case LOP_JUMPIFLT:
+            case LOP_JUMPIFNOTEQ:
+            case LOP_JUMPIFNOTLE:
+            case LOP_JUMPIFNOTLT:
+            case LOP_DUPTABLE:
+            case LOP_FORNPREP:
+            case LOP_FORNLOOP:
+            case LOP_FORGLOOP:
+            case LOP_FORGPREP_INEXT:
+            case LOP_FORGPREP_NEXT:
+            case LOP_DUPCLOSURE:
+            case LOP_LOADKX:
+            case LOP_FORGPREP:
+            case LOP_JUMPXEQKNIL:
+            case LOP_JUMPXEQKB:
+            case LOP_JUMPXEQKN:
+            case LOP_JUMPXEQKS:
+            {
+                newInstruction = std::uint32_t(newOpcode) | (LUAU_INSN_A(instruction) << 8) | (LUAU_INSN_D(instruction) << 16);
+                break;
+            }
+            // E
+            case LOP_JUMPX:
+            case LOP_COVERAGE:
+            {
+                newInstruction = std::uint32_t(newOpcode) | (LUAU_INSN_E(instruction) << 8);
+                break;
+            }
+            default:
+            {
+                newInstruction = instruction;
+                break;
+            }
+            }
+
+            p->code[i] = newInstruction;
+
+            // check if the opcode has an AUX afterwards
+            switch (newOpcode) {
+            case LOP_GETGLOBAL:
+            case LOP_SETGLOBAL:
+            case LOP_GETIMPORT:
+            case LOP_GETTABLEKS:
+            case LOP_SETTABLEKS:
+            case LOP_NAMECALL:
+            case LOP_JUMPIFEQ:
+            case LOP_JUMPIFLE:
+            case LOP_JUMPIFLT:
+            case LOP_JUMPIFNOTEQ:
+            case LOP_JUMPIFNOTLE:
+            case LOP_JUMPIFNOTLT:
+            case LOP_NEWTABLE:
+            case LOP_SETLIST:
+            case LOP_FORGLOOP:
+            case LOP_LOADKX:
+            case LOP_FASTCALL2:
+            case LOP_FASTCALL2K:
+            case LOP_JUMPXEQKNIL:
+            case LOP_JUMPXEQKB:
+            case LOP_JUMPXEQKN:
+            case LOP_JUMPXEQKS:
+            {
+                i++;
+                break;
+            }
+            default:
+            {
+                break;
+            }
+            }
+        }
+    }
+}
+
 void Disassembler::processProto(Proto* p, Proto* parent) {
+    this->decodeInstructions(p);
+
     const char* name = p->debugname != NULL ? p->debugname->data : "unknown";
     this->write("constants for %s:\n", name);
     this->write("size: %d\n", p->sizek);
